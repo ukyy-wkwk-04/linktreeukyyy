@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>znx.space</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #1a1a1e;
+    background-image: linear-gradient(to bottom, #1a1a1e, #0a0a0c);
+    color: #ffffff; min-height: 100vh;
+    display: flex; justify-content: center; align-items: flex-start;
+    padding: 40px 16px 60px; background-attachment: fixed;
+    transition: background 0.3s ease;
+  }
+  #bgLayer {
+    position: fixed; inset: 0; z-index: 0;
+    background-size: cover; background-position: center;
+    background-repeat: no-repeat; display: none;
+  }
+  #bgLayer video { width: 100%; height: 100%; object-fit: cover; }
+  #bgLayer.active { display: block; }
+  body.glass-mode .header {
+    background: rgba(40, 40, 45, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+  }
+  body.glass-mode .link-item {
+    background: rgba(40, 40, 45, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+  }
+  body.glass-mode .link-item:hover { background: rgba(50, 50, 55, 0.35) !important; }
+  body.glass-mode .empty-state {
+    background: rgba(40, 40, 45, 0.25) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+  body.glass-mode .group-title { text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
+  .container { width:100%; max-width:480px; position:relative; z-index: 1; }
+  .header {
+    text-align: center; margin-bottom: 24px; padding: 24px;
+    background: rgba(60, 60, 65, 0.4);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255,255,255,0.02);
+    transition: all 0.3s ease;
+  }
+  .avatar {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, #555, #333);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-family: 'Space Mono', monospace; font-size: 32px; font-weight: 700; color: #fff;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6); letter-spacing: -2px;
+    overflow: hidden; position: relative;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .username { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; color: #ffffff; }
+  .username::before { content: '@'; color: #aaa; }
+  .bio { font-size: 13px; color: #aaa; line-height: 1.5; max-width: 340px; margin: 0 auto; font-weight: 400; }
+  .links { display: flex; flex-direction: column; gap: 14px; }
+  .group-title {
+    font-size: 13px; font-weight: 600; color: #fff;
+    margin-top: 10px; margin-bottom: -2px; padding-left: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .group-title::before { content: ''; display: block; width: 4px; height: 14px; background: #aaa; border-radius: 2px; }
+  .link-item {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    background: rgba(55, 55, 60, 0.6);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px;
+    text-decoration: none; color: #ffffff; transition: all 0.3s ease;
+    position: relative; overflow: hidden; min-height: 74px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(255, 255, 255, 0.03);
+  }
+  .link-item:hover {
+    background: rgba(75, 75, 80, 0.8); border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 4px 15px rgba(255, 255, 255, 0.08);
+  }
+  .link-icon {
+    width: 42px; height: 42px; border-radius: 12px; background: rgba(0, 0, 0, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+  }
+  .link-text { flex: 1; min-width: 0; text-align: left; display: flex; flex-direction: column; justify-content: center; }
+  .link-title { font-size: 15px; font-weight: 600; margin-bottom: 0; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .link-sub { font-size: 11px; color: #aaa; font-family: 'Space Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .link-arrow { font-size: 16px; color: #888; flex-shrink: 0; transition: color 0.3s, transform 0.3s; }
+  .link-item:hover .link-arrow { color: #fff; transform: translateX(4px); }
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    background: rgba(55, 55, 60, 0.5); backdrop-filter: blur(12px);
+    border: 1px dashed rgba(255,255,255,0.2); border-radius: 16px;
+    color: #aaa; font-family: 'Space Mono', monospace; font-size: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 12px; display: block; color: #aaa; }
+  .admin-fab {
+    position: fixed; bottom: 24px; right: 24px; width: 50px; height: 50px;
+    border-radius: 50%; background: transparent; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 100; opacity: 0;
+    box-shadow: none; pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    padding: 20px; animation: fadeIn 0.3s ease;
+  }
+  .overlay.active { display: flex; }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  .panel {
+    background: rgba(45, 45, 50, 0.9); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; width: 100%; max-width: 480px; max-height: 88vh;
+    overflow-y: auto; padding: 28px; position: relative;
+    animation: slideUp 0.3s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+  .panel::-webkit-scrollbar { width: 4px; }
+  .panel::-webkit-scrollbar-track { background: transparent; }
+  .panel::-webkit-scrollbar-thumb { background: #666; border-radius: 2px; }
+  .panel-close {
+    position: absolute; top: 20px; right: 20px; width: 32px; height: 32px;
+    border-radius: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #aaa; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .panel-close:hover { background: #ff3c3c; color: #fff; border-color: #ff3c3c; }
+  .panel h2 { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; color: #fff; }
+  .panel h2::before { content: '// '; color: #aaa; }
+  .panel-sub { font-size: 12px; color: #aaa; font-family: 'Space Mono', monospace; margin-bottom: 24px; }
+  .login-field { display: flex; gap: 8px; margin-bottom: 10px; position: relative; }
+  .login-field input {
+    flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+    padding: 14px 44px 14px 16px; color: #fff; font-family: 'Space Mono', monospace;
+    font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .login-field input:focus { border-color: #fff; }
+  .eye-btn {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #aaa; cursor: pointer; padding: 4px;
+    display: flex; align-items: center; justify-content: center; transition: color 0.2s;
+  }
+  .eye-btn:hover { color: #fff; }
+  .eye-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn {
+    background: #ddd; border: none; border-radius: 12px; padding: 12px 20px;
+    color: #111; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn:hover { background: #fff; }
+  .btn:active { transform: scale(0.97); }
+  .btn-ghost { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ddd; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .btn-sm { padding: 8px 14px; font-size: 11px; }
+  .btn-block { width: 100%; display: block; }
+  .admin-section { margin-bottom: 24px; }
+  .admin-label {
+    font-family: 'Space Mono', monospace; font-size: 11px; color: #ccc;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block;
+  }
+  .admin-input {
+    width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+    padding: 12px 14px; color: #fff; font-family: 'Inter', sans-serif;
+    font-size: 13px; outline: none; margin-bottom: 10px; transition: border-color 0.2s;
+  }
+  .admin-input:focus { border-color: #fff; background: rgba(0,0,0,0.5); }
+  .admin-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .admin-input-row .admin-input { margin-bottom: 0; }
+  .link-manage-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; margin-bottom: 8px;
+  }
+  .link-manage-item .lm-icon {
+    width: 36px; height: 36px; border-radius: 8px; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.05);
+  }
+  .link-manage-item .lm-info { flex: 1; min-width: 0; }
+  .link-manage-item .lm-title { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .link-manage-item .lm-sub { font-size: 10px; color: #aaa; font-family: 'Space Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lm-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #aaa;
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; flex-shrink: 0; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lm-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+  .lm-btn.del:hover { background: #ff3c3c; border-color: #ff3c3c; color: #fff; }
+  .empty-manage {
+    text-align: center; padding: 24px; color: #888;
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px;
+  }
+  .edit-form {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px; padding: 16px; margin-bottom: 8px;
+  }
+  .edit-form .admin-input { margin-bottom: 8px; }
+  .edit-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .toast {
+    position: fixed; bottom: 90px; right: 24px;
+    background: rgba(50, 50, 55, 0.95); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px;
+    padding: 12px 20px; font-family: 'Space Mono', monospace; font-size: 12px;
+    color: #fff; z-index: 300; opacity: 0; transform: translateY(10px);
+    transition: all 0.3s; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.err { border-color: #ff3c3c; }
+  .file-input-wrapper {
+    background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.3); border-radius: 10px;
+    padding: 12px; text-align: center; cursor: pointer; margin-bottom: 10px; transition: all 0.2s;
+  }
+  .file-input-wrapper:hover { background: rgba(0,0,0,0.5); border-color: #fff; }
+  .file-input-wrapper input[type="file"] { display: none; }
+  .file-input-wrapper span { font-size: 12px; color: #aaa; font-family: 'Space Mono', monospace; }
+  .bg-option-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .bg-option-row .btn { flex: 1; min-width: 100px; }
+  .bg-current-info {
+    font-size: 11px; color: #888; font-family: 'Space Mono', monospace;
+    margin-bottom: 10px; padding: 8px 12px; background: rgba(0,0,0,0.3);
+    border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+  }
+  .avatar-preview {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+    margin: 0 auto 10px; display: block; border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .bg-preview {
+    width: 100%; max-height: 120px; object-fit: cover; border-radius: 10px;
+    margin-bottom: 10px; display: block; border: 1px solid rgba(255,255,255,0.15);
+  }
+</style>
+</head>
+<body>
+
+<div id="bgLayer"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="avatar" id="avatarEl">ZN</div>
+    <div class="username" id="usernameEl">zinuxzz</div>
+    <p class="bio" id="bioEl">Digital architect. Building things that matter.</p>
+  </div>
+  <div id="linksContainer"></div>
+</div>
+
+<div class="admin-fab" id="adminFab" title=""></div>
+
+<div class="overlay" id="overlay">
+  <div class="panel" id="panel">
+    <button class="panel-close" id="panelClose">✕</button>
+    <div id="panelContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  const ADMIN_PASS_RAW = '*201025*';
+  const ADMIN_PASS_NORM = ADMIN_PASS_RAW.replace(/\*/g, '');
+  const STORAGE_KEY = 'znx_links_v2';
+  const PROFILE_KEY = 'znx_profile_v2';
+  const BG_KEY = 'znx_bg_v1';
+
+  const SVG_EYE = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  const SVG_EYE_OFF = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
+  let links = [];
+  let isAuthed = false;
+  let editingId = null;
+
+  // STATE TERPISAH — tidak di-reset oleh renderAdminPanel
+  let pendingAvatar = null;   // base64 string, atau 'HAPUS', atau null
+  let pendingBgImage = null;  // base64 string, atau null
+
+  function safeGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); return true; } catch(e) { return false; } }
+
+  function init() {
+    const stored = safeGet(STORAGE_KEY);
+    if (stored) { try { links = JSON.parse(stored) || []; } catch(e) { links = []; } }
+    renderLinks();
+    loadProfile();
+    loadBackground();
+    bindEvents();
+  }
+
+  function saveLinks() { safeSet(STORAGE_KEY, JSON.stringify(links)); }
+
+  function renderLinks() {
+    const container = document.getElementById('linksContainer');
+    if (!links.length) {
+      container.className = '';
+      container.innerHTML = '<div class="empty-state"><span class="icon">⌀</span>belum ada link<br><span style="font-size:10px;color:#888;margin-top:4px;display:block;">admin bisa menambahkan lewat panel</span></div>';
+      return;
+    }
+    container.className = 'links';
+    let html = '';
+    let lastGroup = '__INIT__';
+
+    links.forEach(function(l) {
+      var groupName = (l.group && String(l.group).trim() !== '') ? String(l.group).trim() : '';
+      if (groupName !== lastGroup) {
+        if (groupName !== '') {
+          html += '<div class="group-title">' + escHtml(groupName) + '</div>';
+        }
+        lastGroup = groupName;
+      }
+      var subHtml = (l.sub && String(l.sub).trim() !== '') ? '<div class="link-sub">' + escHtml(l.sub) + '</div>' : '';
+      html += '<a class="link-item" href="' + escAttr(l.url) + '" target="_blank" rel="noopener">' +
+        '<div class="link-icon">' + escHtml(l.icon || '🔗') + '</div>' +
+        '<div class="link-text"><div class="link-title">' + escHtml(l.title) + '</div>' + subHtml + '</div>' +
+        '<div class="link-arrow">→</div>' +
+      '</a>';
+    });
+    container.innerHTML = html;
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function escAttr(s) { return escHtml(s); }
+
+  let toastTimer;
+  function toast(msg, isErr) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (isErr ? ' err' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = 'toast' + (isErr ? ' err' : ''); }, 2200);
+  }
+
+  function checkPass(val) {
+    var clean = String(val || '').replace(/\*/g, '').trim();
+    return clean === ADMIN_PASS_NORM;
+  }
+
+  // ===== BACKGROUND =====
+  function getBgData() {
+    var raw = safeGet(BG_KEY);
+    if (!raw) return { type: 'default' };
+    try { return JSON.parse(raw) || { type: 'default' }; } catch(e) { return { type: 'default' }; }
+  }
+
+  function applyBackground() {
+    var bg = getBgData();
+    var layer = document.getElementById('bgLayer');
+    var body = document.body;
+    layer.innerHTML = '';
+    layer.className = '';
+    layer.style.backgroundImage = '';
+    body.classList.remove('glass-mode');
+
+    if (bg.type === 'image' && bg.value) {
+      layer.style.backgroundImage = 'url("' + bg.value + '")';
+      layer.classList.add('active');
+      body.classList.add('glass-mode');
+    } else if (bg.type === 'video' && bg.value) {
+      layer.innerHTML = '<video autoplay muted loop playsinline><source src="' + escAttr(bg.value) + '" type="video/mp4"></video>';
+      layer.classList.add('active');
+      body.classList.add('glass-mode');
+    }
+  }
+
+  function loadBackground() { applyBackground(); }
+
+  function saveBg(type, value) {
+    if (type === 'default') safeSet(BG_KEY, JSON.stringify({ type: 'default' }));
+    else safeSet(BG_KEY, JSON.stringify({ type: type, value: value }));
+    applyBackground();
+  }
+
+  // ===== PANELS =====
+  function openPanel() {
+    document.getElementById('overlay').classList.add('active');
+    editingId = null;
+    pendingAvatar = null;
+    pendingBgImage = null;
+    if (isAuthed) renderAdminPanel();
+    else renderLoginPanel();
+  }
+
+  function closePanel() {
+    document.getElementById('overlay').classList.remove('active');
+    editingId = null;
+    pendingAvatar = null;
+    pendingBgImage = null;
+  }
+
+  function renderLoginPanel() {
+    document.getElementById('panelContent').innerHTML =
+      '<h2>Admin Access</h2><p class="panel-sub">masukkan password untuk melanjutkan</p>' +
+      '<div class="login-field"><input type="password" id="passInput" placeholder="••••••••" autocomplete="off"><button type="button" class="eye-btn" id="toggleEye" title="Lihat Password">' + SVG_EYE + '</button></div>' +
+      '<button type="button" class="btn btn-block" id="loginBtn" style="margin-top:8px;">→ Masuk</button>';
+
+    const input = document.getElementById('passInput');
+    const btn = document.getElementById('loginBtn');
+    const eyeBtn = document.getElementById('toggleEye');
+    if (!input || !btn) return;
+
+    eyeBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (input.type === 'password') { input.type = 'text'; eyeBtn.innerHTML = SVG_EYE_OFF; }
+      else { input.type = 'password'; eyeBtn.innerHTML = SVG_EYE; }
+      input.focus();
+    });
+
+    input.addEventListener('input', function() {
+      if (checkPass(input.value)) { isAuthed = true; editingId = null; renderAdminPanel(); toast('akses diterima'); }
+    });
+
+    function tryLogin() {
+      if (checkPass(input.value)) { isAuthed = true; editingId = null; renderAdminPanel(); toast('akses diterima'); }
+      else { toast('password salah, coba lagi', true); }
+    }
+    btn.addEventListener('click', tryLogin);
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); tryLogin(); } });
+    setTimeout(function() { try { input.focus(); } catch(e) {} }, 100);
+  }
+
+  function renderAdminPanel() {
+    if (!isAuthed) { renderLoginPanel(); return; }
+
+    // JANGAN reset pendingAvatar / pendingBgImage di sini!
+    let html = '<h2>Admin Panel</h2><p class="panel-sub">tambah & kelola link lu</p>';
+
+    // === BACKGROUND SECTION ===
+    var bg = getBgData();
+    var bgInfoText = 'Default (gelap)';
+    if (bg.type === 'image') bgInfoText = 'Foto (custom)';
+    else if (bg.type === 'video') bgInfoText = 'Video (URL)';
+
+    // Preview background yang lagi dipending
+    var bgPreviewHtml = '';
+    if (pendingBgImage) {
+      bgPreviewHtml = '<img class="bg-preview" src="' + pendingBgImage + '" alt="preview bg">';
+    } else if (bg.type === 'image' && bg.value) {
+      bgPreviewHtml = '<img class="bg-preview" src="' + bg.value + '" alt="current bg">';
+    }
+
+    html += '<div class="admin-section"><span class="admin-label">🖼 Background</span>' +
+      '<div class="bg-current-info">Sekarang: <strong>' + escHtml(bgInfoText) + '</strong></div>' +
+      bgPreviewHtml +
+      '<div class="bg-option-row">' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="bgDefaultBtn">Default</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="bgPhotoBtn">Foto (File)</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="bgVideoBtn">Video (URL)</button>' +
+      '</div>' +
+      '<div id="bgPhotoArea" style="display:none;">' +
+        '<div class="file-input-wrapper" id="bgFileWrap">' +
+          '<input type="file" id="bgImageFile" accept="image/*">' +
+          '<span id="bgFileName">📷 Pilih Foto Background</span>' +
+        '</div>' +
+        '<button type="button" class="btn btn-sm btn-block" id="applyPhotoBgBtn">Terapkan Foto</button>' +
+      '</div>' +
+      '<div id="bgVideoArea" style="display:none;">' +
+        '<input class="admin-input" id="bgVideoUrl" placeholder="https://... (link video .mp4)" value="' + (bg.type === 'video' ? escAttr(bg.value) : '') + '">' +
+        '<button type="button" class="btn btn-sm btn-block" id="applyVideoBgBtn">Terapkan Video</button>' +
+      '</div>' +
+    '</div>';
+
+    // === LINK SECTION ===
+    if (editingId !== null) {
+      var cur = links.find(function(l) { return l.id === editingId; });
+      if (cur) {
+        html += '<div class="admin-section"><span class="admin-label">✎ Edit Link</span><div class="edit-form">' +
+          '<input class="admin-input" id="editGroup" placeholder="Judul Grup (misal: Saluran) - Opsional" value="' + escAttr(cur.group || '') + '">' +
+          '<div class="admin-input-row">' +
+            '<input class="admin-input" id="editIcon" placeholder="🔗" maxlength="8" style="max-width:70px;text-align:center;" value="' + escAttr(cur.icon || '🔗') + '">' +
+            '<input class="admin-input" id="editTitle" placeholder="judul" value="' + escAttr(cur.title) + '">' +
+          '</div>' +
+          '<input class="admin-input" id="editSub" placeholder="subtitle (opsional)" value="' + escAttr(cur.sub || '') + '">' +
+          '<input class="admin-input" id="editUrl" placeholder="https://..." value="' + escAttr(cur.url) + '">' +
+          '<div class="edit-actions"><button type="button" class="btn btn-sm" id="saveEditBtn">simpan perubahan</button><button type="button" class="btn btn-ghost btn-sm" id="cancelEditBtn">batal</button></div></div></div>';
+      }
+    } else {
+      html += '<div class="admin-section"><span class="admin-label">+ Tambah Link Baru</span>' +
+        '<input class="admin-input" id="newGroup" placeholder="Judul Grup (misal: Saluran) - Opsional">' +
+        '<div class="admin-input-row">' +
+          '<input class="admin-input" id="newIcon" placeholder="🔗" maxlength="8" style="max-width:70px;text-align:center;">' +
+          '<input class="admin-input" id="newTitle" placeholder="judul link (wajib)">' +
+        '</div>' +
+        '<input class="admin-input" id="newSub" placeholder="subtitle (opsional)">' +
+        '<input class="admin-input" id="newUrl" placeholder="https://... (wajib)">' +
+        '<button type="button" class="btn btn-sm btn-block" id="addLinkBtn">+ Simpan Link</button></div>';
+    }
+
+    html += '<div class="admin-section"><span class="admin-label">Daftar Link (' + links.length + ')</span><div id="manageList">';
+    if (!links.length) html += '<div class="empty-manage">// belum ada link, tambahin di atas</div>';
+    else html += links.map(function(l) {
+      var subLine = (l.sub && String(l.sub).trim() !== '') ? '<div class="lm-sub">' + escHtml(l.sub) + '</div>' : '<div class="lm-sub">' + escHtml(l.url) + '</div>';
+      var groupLine = l.group ? '[' + escHtml(l.group) + '] ' : '';
+      return '<div class="link-manage-item"><div class="lm-icon">' + escHtml(l.icon || '🔗') + '</div>' +
+        '<div class="lm-info"><div class="lm-title">' + groupLine + escHtml(l.title) + '</div>' + subLine + '</div>' +
+        '<button type="button" class="lm-btn edit" data-id="' + escAttr(l.id) + '" title="edit">✎</button>' +
+        '<button type="button" class="lm-btn del" data-id="' + escAttr(l.id) + '" title="hapus">✕</button></div>';
+    }).join('');
+    html += '</div></div>';
+
+    // === PROFILE SECTION ===
+    var currentAvatarImg = getAvatarImg();
+    var previewAvatar = pendingAvatar === 'HAPUS' ? '' : (pendingAvatar || currentAvatarImg);
+    var avatarPreviewHtml = previewAvatar
+      ? '<img class="avatar-preview" src="' + previewAvatar + '" alt="preview avatar">'
+      : '';
+
+    html += '<div class="admin-section"><span class="admin-label">Profil & Logo</span>' +
+      avatarPreviewHtml +
+      '<input class="admin-input" id="admUsername" placeholder="username" value="' + escAttr(getUsername()) + '">' +
+      '<input class="admin-input" id="admBio" placeholder="bio singkat" value="' + escAttr(getBio()) + '">' +
+      '<input class="admin-input" id="admAvatarText" placeholder="Inisial Logo (Maks 3 huruf)" maxlength="3" value="' + escAttr(getAvatarText()) + '">' +
+      '<div class="file-input-wrapper" id="avatarFileWrap">' +
+        '<input type="file" id="admAvatarFile" accept="image/*">' +
+        '<span id="fileNameDisplay">📷 Pilih Foto Logo (dari File)</span>' +
+      '</div>' +
+      '<button type="button" class="btn btn-ghost btn-sm" id="clearAvatarBtn" style="margin-bottom:10px;">Hapus Foto Logo</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" id="saveProfileBtn">simpan profil</button></div>';
+
+    html += '<button type="button" class="btn btn-ghost btn-sm btn-block" id="logoutBtn" style="margin-top:12px;">logout</button>';
+
+    document.getElementById('panelContent').innerHTML = html;
+    bindAdminEvents();
+
+    if (editingId === null) {
+      setTimeout(function() { var nt = document.getElementById('newTitle'); if (nt) nt.focus(); }, 50);
+    }
+  }
+
+  function bindAdminEvents() {
+    // ===== BACKGROUND =====
+    var bgPhotoBtn = document.getElementById('bgPhotoBtn');
+    var bgVideoBtn = document.getElementById('bgVideoBtn');
+    var bgDefaultBtn = document.getElementById('bgDefaultBtn');
+    var bgPhotoArea = document.getElementById('bgPhotoArea');
+    var bgVideoArea = document.getElementById('bgVideoArea');
+
+    if (bgPhotoBtn) bgPhotoBtn.addEventListener('click', function() {
+      bgPhotoArea.style.display = 'block';
+      bgVideoArea.style.display = 'none';
+    });
+    if (bgVideoBtn) bgVideoBtn.addEventListener('click', function() {
+      bgVideoArea.style.display = 'block';
+      bgPhotoArea.style.display = 'none';
+    });
+    if (bgDefaultBtn) bgDefaultBtn.addEventListener('click', function() {
+      saveBg('default');
+      pendingBgImage = null;
+      renderAdminPanel();
+      toast('background kembali default');
+    });
+
+    var bgImageFile = document.getElementById('bgImageFile');
+    if (bgImageFile) {
+      bgImageFile.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+          pendingBgImage = evt.target.result;
+          document.getElementById('bgFileName').textContent = "✅ " + file.name;
+          document.getElementById('bgFileName').style.color = "#fff";
+          // Re-render buat tampilin preview
+          renderAdminPanel();
+          document.getElementById('bgPhotoArea').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    var applyPhotoBgBtn = document.getElementById('applyPhotoBgBtn');
+    if (applyPhotoBgBtn) applyPhotoBgBtn.addEventListener('click', function() {
+      if (!pendingBgImage) { toast('pilih foto dulu', true); return; }
+      saveBg('image', pendingBgImage);
+      pendingBgImage = null;
+      renderAdminPanel();
+      toast('background foto diterapkan');
+    });
+
+    var applyVideoBgBtn = document.getElementById('applyVideoBgBtn');
+    if (applyVideoBgBtn) applyVideoBgBtn.addEventListener('click', function() {
+      var url = (document.getElementById('bgVideoUrl').value || '').trim();
+      if (!url) { toast('url video wajib', true); return; }
+      if (!/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) { toast('url harus video .mp4/.webm/.ogg', true); return; }
+      saveBg('video', url);
+      pendingBgImage = null;
+      renderAdminPanel();
+      toast('background video diterapkan');
+    });
+
+    // ===== AVATAR =====
+    var fileInput = document.getElementById('admAvatarFile');
+    if (fileInput) {
+      fileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+          pendingAvatar = evt.target.result;
+          // Re-render biar preview muncul dan file input ke-reset
+          renderAdminPanel();
+          var disp = document.getElementById('fileNameDisplay');
+          if (disp) { disp.textContent = "✅ " + file.name; disp.style.color = "#fff"; }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    var clearAvatarBtn = document.getElementById('clearAvatarBtn');
+    if (clearAvatarBtn) {
+      clearAvatarBtn.addEventListener('click', function() {
+        pendingAvatar = 'HAPUS';
+        renderAdminPanel();
+        var disp = document.getElementById('fileNameDisplay');
+        if (disp) { disp.textContent = "Foto akan dihapus (simpan profil)"; disp.style.color = "#ff3c3c"; }
+      });
+    }
+
+    var saveProfileBtn = document.getElementById('saveProfileBtn');
+    if (saveProfileBtn) {
+      saveProfileBtn.addEventListener('click', function() {
+        var u = (document.getElementById('admUsername').value || '').trim();
+        var b = (document.getElementById('admBio').value || '').trim();
+        var at = (document.getElementById('admAvatarText').value || '').trim().toUpperCase();
+
+        if (u) safeSet(PROFILE_KEY + '_user', u);
+        safeSet(PROFILE_KEY + '_bio', b);
+        safeSet(PROFILE_KEY + '_avatar_text', at);
+
+        if (pendingAvatar === 'HAPUS') {
+          safeSet(PROFILE_KEY + '_avatar_img', '');
+        } else if (pendingAvatar) {
+          safeSet(PROFILE_KEY + '_avatar_img', pendingAvatar);
+        }
+
+        pendingAvatar = null;
+        loadProfile();
+        renderAdminPanel();
+        toast('profil & logo disimpan');
+      });
+    }
+
+    // ===== LINKS =====
+    var addLinkBtn = document.getElementById('addLinkBtn');
+    if (addLinkBtn) {
+      addLinkBtn.addEventListener('click', function() {
+        var group = (document.getElementById('newGroup').value || '').trim();
+        var icon = (document.getElementById('newIcon').value || '').trim() || '🔗';
+        var title = (document.getElementById('newTitle').value || '').trim();
+        var sub = (document.getElementById('newSub').value || '').trim();
+        var url = (document.getElementById('newUrl').value || '').trim();
+        if (!title || !url) { toast('judul & url wajib diisi', true); return; }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        links.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,5), group: group, icon: icon, title: title, sub: sub, url: url });
+        saveLinks(); editingId = null; renderLinks(); renderAdminPanel(); toast('link ditambahkan');
+      });
+    }
+
+    var saveEditBtn = document.getElementById('saveEditBtn');
+    if (saveEditBtn) {
+      saveEditBtn.addEventListener('click', function() {
+        var group = (document.getElementById('editGroup').value || '').trim();
+        var icon = (document.getElementById('editIcon').value || '').trim() || '🔗';
+        var title = (document.getElementById('editTitle').value || '').trim();
+        var sub = (document.getElementById('editSub').value || '').trim();
+        var url = (document.getElementById('editUrl').value || '').trim();
+        if (!title || !url) { toast('judul & url wajib diisi', true); return; }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        var idx = links.findIndex(function(l) { return l.id === editingId; });
+        if (idx > -1) {
+          links[idx] = { id: editingId, group: group, icon: icon, title: title, sub: sub, url: url };
+          saveLinks(); renderLinks(); editingId = null; renderAdminPanel(); toast('link diperbarui');
+        }
+      });
+    }
+
+    var cancelEditBtn = document.getElementById('cancelEditBtn');
+    if (cancelEditBtn) { cancelEditBtn.addEventListener('click', function() { editingId = null; renderAdminPanel(); }); }
+
+    document.querySelectorAll('.lm-btn.edit').forEach(function(btn) {
+      btn.addEventListener('click', function() { editingId = btn.getAttribute('data-id'); renderAdminPanel(); });
+    });
+
+    document.querySelectorAll('.lm-btn.del').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = btn.getAttribute('data-id');
+        links = links.filter(function(l) { return l.id !== id; });
+        if (editingId === id) editingId = null;
+        saveLinks(); renderLinks(); renderAdminPanel(); toast('link dihapus');
+      });
+    });
+
+    var logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) { logoutBtn.addEventListener('click', function() { isAuthed = false; closePanel(); toast('logged out'); }); }
+  }
+
+  function getUsername() { return safeGet(PROFILE_KEY + '_user') || 'zinuxzz'; }
+  function getBio() { return safeGet(PROFILE_KEY + '_bio') || 'Digital architect. Building things that matter.'; }
+  function getAvatarText() { return safeGet(PROFILE_KEY + '_avatar_text') || 'ZN'; }
+  function getAvatarImg() { return safeGet(PROFILE_KEY + '_avatar_img') || ''; }
+
+  function loadProfile() {
+    var u = getUsername();
+    var b = getBio();
+    var at = getAvatarText();
+    var img = getAvatarImg();
+
+    document.getElementById('usernameEl').textContent = u;
+    document.getElementById('bioEl').textContent = b;
+
+    var avEl = document.getElementById('avatarEl');
+    if (img) {
+      avEl.innerHTML = '<img src="' + img + '" alt="logo">';
+    } else {
+      avEl.textContent = (at || 'ZN').slice(0,3).toUpperCase();
+    }
+  }
+
+  function bindEvents() {
+    document.getElementById('adminFab').addEventListener('click', openPanel);
+    document.getElementById('panelClose').addEventListener('click', closePanel);
+    document.getElementById('overlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overlay')) closePanel();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closePanel();
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); openPanel(); }
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+})();
+</script>
+</body>
+</html>
